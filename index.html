@@ -199,6 +199,8 @@
             
             let tentativas = 0;
             let touchTimeout;
+            let posicaoAnterior = { x: 0, y: 0 };
+            let primeiraPosicao = true;
             
             // Área segura onde o NÃO pode aparecer (não sobrepõe o SIM)
             function getAreaSegura() {
@@ -235,25 +237,48 @@
                         naoTop > simBottom);
             }
             
-            // Gera uma posição segura que não sobrepõe o SIM
+            // Calcula a distância entre duas posições
+            function calcularDistancia(pos1, pos2) {
+                return Math.sqrt(
+                    Math.pow(pos2.x - pos1.x, 2) + 
+                    Math.pow(pos2.y - pos1.y, 2)
+                );
+            }
+            
+            // Gera uma posição segura que não sobrepõe o SIM e está longe da posição anterior
             function gerarPosicaoSegura() {
                 const areaSegura = getAreaSegura();
                 let tentativasPosicao = 0;
                 let posX, posY;
+                const distanciaMinima = Math.min(
+                    areaSegura.maxX - areaSegura.minX,
+                    areaSegura.maxY - areaSegura.minY
+                ) * 0.5; // Distância mínima de 50% da tela
                 
                 do {
                     posX = Math.random() * (areaSegura.maxX - areaSegura.minX) + areaSegura.minX;
                     posY = Math.random() * (areaSegura.maxY - areaSegura.minY) + areaSegura.minY;
                     tentativasPosicao++;
                     
-                    // Prevenir loop infinito
-                    if (tentativasPosicao > 50) {
-                        // Posição de fallback - abaixo do SIM
-                        posX = (buttonsContainer.offsetWidth - botaoNao.offsetWidth) / 2;
-                        posY = botaoSim.offsetHeight + 20;
+                    // Se for a primeira posição, não precisa verificar distância
+                    if (primeiraPosicao) {
                         break;
                     }
-                } while (sobrepoeSim(posX, posY));
+                    
+                    // Verifica se está longe o suficiente da posição anterior
+                    const distanciaAtual = calcularDistancia(posicaoAnterior, {x: posX, y: posY});
+                    
+                    // Prevenir loop infinito
+                    if (tentativasPosicao > 100) {
+                        // Posição de fallback - canto oposto
+                        posX = posicaoAnterior.x < areaSegura.maxX/2 ? 
+                               areaSegura.maxX - botaoNao.offsetWidth : areaSegura.minX;
+                        posY = posicaoAnterior.y < areaSegura.maxY/2 ? 
+                               areaSegura.maxY - botaoNao.offsetHeight : areaSegura.minY;
+                        break;
+                    }
+                } while (sobrepoeSim(posX, posY) || 
+                        (!primeiraPosicao && calcularDistancia(posicaoAnterior, {x: posX, y: posY}) < distanciaMinima));
                 
                 return { x: posX, y: posY };
             }
@@ -263,6 +288,8 @@
                 const posicaoSegura = gerarPosicaoSegura();
                 botaoNao.style.left = posicaoSegura.x + 'px';
                 botaoNao.style.top = posicaoSegura.y + 'px';
+                posicaoAnterior = posicaoSegura;
+                primeiraPosicao = false;
             }
             
             // Chama a função para posicionar os botões
@@ -297,6 +324,9 @@
                             botaoNao.style.left = novaPosicao.x + 'px';
                             botaoNao.style.top = novaPosicao.y + 'px';
                             
+                            // Atualiza a posição anterior
+                            posicaoAnterior = novaPosicao;
+                            
                             tentativas++;
                             contador.textContent = `Tentativas: ${tentativas}`;
                         }, 50);
@@ -323,6 +353,9 @@
                     botaoNao.style.transition = 'none';
                     botaoNao.style.left = novaPosicao.x + 'px';
                     botaoNao.style.top = novaPosicao.y + 'px';
+                    
+                    // Atualiza a posição anterior
+                    posicaoAnterior = novaPosicao;
                     
                     tentativas++;
                     contador.textContent = `Tentativas: ${tentativas}`;
@@ -405,6 +438,7 @@
                         const novaPosicao = gerarPosicaoSegura();
                         botaoNao.style.left = novaPosicao.x + 'px';
                         botaoNao.style.top = novaPosicao.y + 'px';
+                        posicaoAnterior = novaPosicao;
                     }
                 }, 100);
             });

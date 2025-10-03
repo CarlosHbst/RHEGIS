@@ -50,12 +50,9 @@
         
         .buttons-container {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: center;
             gap: 20px;
             margin-top: 30px;
-            position: relative;
-            min-height: 200px;
         }
         
         button {
@@ -64,20 +61,19 @@
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
             font-weight: bold;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            width: 200px;
+            width: 150px;
             min-height: 60px;
             touch-action: manipulation;
             position: relative;
+            transition: none !important; /* sempre instantâneo */
         }
         
         #sim {
             background: linear-gradient(to right, #4CAF50, #45a049);
             color: white;
             z-index: 20;
-            order: 1;
         }
         
         #sim:active {
@@ -88,8 +84,7 @@
         #nao {
             background: linear-gradient(to right, #f44336, #d32f2f);
             color: white;
-            position: fixed; /* usa a tela inteira */
-            z-index: 999;
+            z-index: 10;
         }
         
         .resultado {
@@ -148,7 +143,7 @@
         
         <div class="resultado" id="resultado"></div>
         <div class="contador" id="contador">Tentativas: 0</div>
-        <div class="instrucoes">Tente clicar no NÃO! (Mas ele foge pela tela inteira)</div>
+        <div class="instrucoes">Tente clicar no NÃO! (Ele vai fugir pela tela)</div>
     </div>
 
     <script>
@@ -160,6 +155,7 @@
             
             let tentativas = 0;
             let ultimaPosicao = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            let fugiu = false; // só foge depois do primeiro movimento
 
             // Gera posição aleatória, mas distante da anterior
             function gerarPosicaoFuga() {
@@ -182,13 +178,19 @@
                 return { x: posX, y: posY };
             }
 
-            // Inicializa posição
-            function posicionarInicial() {
-                const pos = gerarPosicaoFuga();
-                botaoNao.style.left = pos.x + 'px';
-                botaoNao.style.top = pos.y + 'px';
+            // Faz o botão fugir
+            function fugir() {
+                if (!fugiu) {
+                    // primeira vez: solta na tela
+                    botaoNao.style.position = 'fixed';
+                    fugiu = true;
+                }
+                const novaPos = gerarPosicaoFuga();
+                botaoNao.style.left = novaPos.x + 'px';
+                botaoNao.style.top = novaPos.y + 'px';
+                tentativas++;
+                contador.textContent = `Tentativas: ${tentativas}`;
             }
-            setTimeout(posicionarInicial, 200);
 
             // Detecta mouse perto
             document.addEventListener('mousemove', function(e) {
@@ -202,11 +204,7 @@
                 );
 
                 if (distancia < 80) {
-                    const novaPos = gerarPosicaoFuga();
-                    botaoNao.style.left = novaPos.x + 'px';
-                    botaoNao.style.top = novaPos.y + 'px';
-                    tentativas++;
-                    contador.textContent = `Tentativas: ${tentativas}`;
+                    fugir();
                 }
             });
 
@@ -224,11 +222,7 @@
                     );
 
                     if (distancia < 80) {
-                        const novaPos = gerarPosicaoFuga();
-                        botaoNao.style.left = novaPos.x + 'px';
-                        botaoNao.style.top = novaPos.y + 'px';
-                        tentativas++;
-                        contador.textContent = `Tentativas: ${tentativas}`;
+                        fugir();
                     }
                 }
             }, { passive: true });
